@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Система под нагрузкой</title>
+    <meta
+      name="description"
+      content="Интерактивное исследование ограничений, потоков, задержек и связей внутри сложных систем."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="experience" aria-labelledby="site-title">
+      <canvas id="system-canvas" aria-hidden="true"></canvas>
+
+      <section class="hero" aria-live="polite">
+        <p class="kicker">Интерактивное исследование</p>
+        <h1 id="site-title">Система под нагрузкой</h1>
+        <p class="thesis">Где возникает напряжение - там проявляется структура.</p>
+        <button class="text-button primary" id="start-button" type="button">
+          Исследовать
+          <span aria-hidden="true">→</span>
+        </button>
+      </section>
+
+      <nav class="experiment-nav" aria-label="Эксперименты">
+        <button class="nav-item is-active" type="button" data-scene="intro">Вход</button>
+        <button class="nav-item" type="button" data-scene="bottleneck">01 Узкое место</button>
+        <button class="nav-item" type="button" data-scene="delay">02 Задержка</button>
+        <button class="nav-item" type="button" data-scene="missing">03 Связь</button>
+        <button class="nav-item" type="button" data-scene="free">Свободно</button>
+      </nav>
+
+      <section class="system-status" aria-live="polite" aria-label="Текущее состояние системы">
+        <span class="scene-label" id="scene-label">Живая система</span>
+        <span id="observation-title">Система проявляется.</span>
+        <span id="observation-text">Потоки уже движутся.</span>
+        <span>скорость: <strong id="metric-throughput">-</strong></span>
+        <span>ограничение: <strong id="metric-bottleneck">-</strong></span>
+        <span class="status-legend">v факт · cap предел · q очередь</span>
+      </section>
+
+      <section class="terminal-console" aria-label="Консоль событий системы" aria-live="polite">
+        <div class="terminal-bar">
+          <span>system.log</span>
+          <span id="log-count">0 lines</span>
+        </div>
+        <ol id="event-log-list"></ol>
+      </section>
+
+      <button class="node-action" id="node-action-button" type="button" hidden>Убрать ограничение</button>
+
+      <section class="controls" aria-label="Управление сценой">
+        <button class="text-button" id="action-button" type="button">Воздействовать</button>
+        <button class="text-button" id="reset-button" type="button">Сбросить</button>
+        <button class="text-button" id="next-button" type="button">Дальше</button>
+      </section>
+
+      <p class="hint" id="interaction-hint">Наведите курсор на узел.</p>
+
+      <section class="sr-only" aria-live="polite">
+        <h2>Текущее состояние системы</h2>
+        <p id="accessible-state">Система формируется из узлов, связей и потоков.</p>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
