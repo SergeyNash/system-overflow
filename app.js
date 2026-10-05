@@ -17,6 +17,19 @@
   const logCount = document.getElementById("log-count");
   const accessibleState = document.getElementById("accessible-state");
   const hint = document.getElementById("interaction-hint");
+  const nodePanel = document.getElementById("node-panel");
+  const powerSlider = document.getElementById("power-slider");
+  const powerLabel = document.getElementById("power-label");
+  const powerDown = document.getElementById("power-down");
+  const pauseButton = document.getElementById("pause-button");
+  let flowModel = FlowModel.create();
+  let selectedNode = null;
+  let paused = false;
+  let holdProgress = 0;
+  let holdApplied = false;
+  let intervention = null;
+  let baselineLimit = "C1";
+  const levelNames = ["Базовая", "Ускоренная", "Высокая", "Предельная"];
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const palette = {
@@ -45,13 +58,13 @@
     },
     bottleneck: {
       label: "01. Узкое место",
-      thesis: "По Голдратту скорость всей системы задаёт её ограничение.",
-      invite: "Найдите красный LIMIT. Действие появляется рядом с текущим ограничением.",
+      thesis: "Поток проходит через связанные участки. Понаблюдайте, где он скапливается.",
+      invite: "Один участок не справляется с потоком. Попробуйте его ускорить.",
       localTitle: "Локальная скорость выросла.",
       localText: "Но скорость системы изменилась только там, где было снято ограничение.",
       consequenceTitle: "Ограничение переместилось.",
       consequenceText: "Теперь поток упирается в следующий участок.",
-      finalTitle: "Система быстрее не самого быстрого узла, а самого медленного ограничения.",
+      finalTitle: "Локальная скорость и результат системы меняются по-разному.",
       finalText: "Оптимизация вне ограничения почти не меняет итоговый поток.",
       state: "Перед C1 образуется очередь. Итоговый поток равен пропускной способности ограничения.",
     },
@@ -244,10 +257,8 @@
   let completed = new Set();
   let completionPending = new Set();
   let selectedNodes = new Set();
-  let branchAdded = false;
   let bottleneckOverview = false;
   let throughput = { before: 0, current: 0, bottleneck: "C1", changed: 0 };
-  let nodeEffects = new Map();
   let firstDragDone = false;
   let firstHoverDone = false;
   let controlsLocked = false;
@@ -275,7 +286,12 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     nodes.forEach((item) => {
       item.x = item.nx * width;
-      item.y = item.ny * height;
+      const mobile = window.innerWidth < 820;
+      const top = sceneId === "bottleneck" ? (mobile ? 380 : 250) : 0;
+      const bottom = sceneId === "bottleneck" ? (mobile ? height - 350 : height - 300) : height;
+      const pos = sceneId === "bottleneck" && mobile ? { source: [0.15, 0.12], A: [0.5, 0.12], B: [0.5, 0.36], C1: [0.26, 0.60], C2: [0.74, 0.60], D: [0.5, 0.86], out: [0.85, 0.86] }[item.id] : null;
+      item.x = (pos ? pos[0] : item.nx) * width;
+      item.y = top + (pos ? pos[1] : item.ny) * Math.max(160, bottom - top);
       item.tx = item.x;
       item.ty = item.y;
     });
@@ -317,7 +333,20 @@
   }
 
   function loadScene(id, nextPhase) {
+    controlsLocked = false;
+    paused = false;
+    pauseButton.textContent = "Пауза";
+    pauseButton.setAttribute("aria-pressed", "false");
+    pointer.down = false;
+    pointer.node = null;
+    selectedNode = null;
+    holdProgress = 0;
+    holdApplied = false;
+    intervention = null;
     sceneId = id;
+    root.dataset.scene = id;
+    nodePanel.hidden = id !== "bottleneck";
+    pauseButton.hidden = id !== "bottleneck";
     const scene = scenes[id];
     phase = nextPhase || (id === "intro" ? "intro.reveal" : id === "final" ? "final.map" : id === "free" ? "free.explore" : "experiment.forming");
     phaseTime = 0;
@@ -331,12 +360,12 @@
     selectedNodes.clear();
     impulses = [];
     timeScale = 1;
-    branchAdded = false;
     bottleneckOverview = false;
     nodes = scene.nodes.map(createNode);
     connections = scene.connections.map(createConnection);
     ghostConnection = scene.ghost ? { from: scene.ghost[0], to: scene.ghost[1], visible: id === "final", live: id === "final", suspicion: 0 } : null;
     seedSceneState(id);
+    resize();
     createParticles();
     root.classList.toggle("has-started", id !== "intro" || firstDragDone);
     setCopyForScene(id);
@@ -349,16 +378,13 @@
 
   function seedSceneState(id) {
     if (id === "bottleneck") {
-      throughput = { before: 0, current: 0, bottleneck: "C1", changed: 0 };
+      flowModel = FlowModel.create();
+      // Begin with a short, real warm-up; its queue is produced by demand.
+      for (let i = 0; i < 90; i++) FlowModel.step(flowModel, 1 / 60);
+      baselineLimit = FlowModel.steady(flowModel).limit;
+      throughput = { before: 0, current: 0, bottleneck: baselineLimit, changed: 0 };
       calculateBottleneckFlow();
       throughput.before = throughput.current;
-      node("C1").queue = 0.92;
-      node("C1").load = 0.78;
-      node("D").load = 0.24;
-      link("B", "C1").queue = 0.88;
-      link("B", "C1").heat = 0.68;
-      link("C1", "D").flow = 0.26;
-      link("B", "C2").flow = 0.68;
     }
     if (id === "final") {
       link("b1", "b2").queue = 0.75;
@@ -375,7 +401,7 @@
       hint.textContent = "Наведите курсор на узел.";
     } else if (id === "bottleneck") {
       showCopy(text.label, text.thesis, text.state);
-      hint.textContent = "Клик по узлу показывает его роль. Снимать нужно красный LIMIT.";
+      hint.textContent = "Выберите узел или удерживайте его, чтобы повысить мощность.";
     } else if (id === "delay" || id === "missing") {
       showCopy(text.label, text.thesis, text.state);
       hint.textContent = "Сначала наблюдайте за поведением системы.";
@@ -396,17 +422,7 @@
   }
 
   function seedEventLog(id) {
-    if (id === "bottleneck") {
-      pushEvent({
-        type: "state",
-        title: "Система загружена",
-        text: `Очередь перед C1 была обнаружена. Скорость системы составила ${throughput.current} ед./такт.`,
-        metricDelta: `ограничение: ${throughput.bottleneck}`,
-        silent: true,
-      });
-    } else {
-      renderEventLog();
-    }
+    renderEventLog();
   }
 
   function pushEvent({ type = "state", title, text, metricDelta = "", silent = false }) {
@@ -427,7 +443,7 @@
 
   function renderEventLog() {
     if (!eventLogList || !logCount) return;
-    logCount.textContent = `${eventLog.length} lines`;
+    logCount.textContent = `${eventLog.length} событий`;
     const latestId = eventLog.at(-1)?.id;
     eventLogList.innerHTML = eventLog
       .map(
@@ -478,22 +494,20 @@
   function updateSidebarMetrics() {
     if (!metricThroughput || !metricBottleneck) return;
     if (sceneId === "bottleneck") {
+      metricThroughput.parentElement.hidden = !completed.has("bottleneck");
+      metricBottleneck.parentElement.hidden = !bottleneckOverview;
       metricThroughput.textContent = `${throughput.current} ед./такт`;
-      metricBottleneck.textContent = throughput.bottleneck;
+      metricBottleneck.textContent = bottleneckOverview ? boundaryLabel(throughput.bottleneck) : "наблюдайте за очередями";
     } else {
+      metricThroughput.parentElement.hidden = false;
+      metricBottleneck.parentElement.hidden = false;
       metricThroughput.textContent = "-";
       metricBottleneck.textContent = "-";
     }
   }
 
   function updateNodeActionPosition() {
-    if (!nodeActionButton || nodeActionButton.hidden || sceneId !== "bottleneck" || completed.has("bottleneck")) return;
-    const target = node(throughput.bottleneck) || node("C1");
-    if (!target) return;
-    const x = Math.min(width - 150, Math.max(110, target.x + 6));
-    const y = Math.min(height - 230, Math.max(154, target.y - target.radius - 28));
-    nodeActionButton.style.left = `${x}px`;
-    nodeActionButton.style.top = `${y}px`;
+    // Controls stay in one place; canvas nodes remain selectable by touch.
   }
 
   function scheduleObservation(delay, title, text, state, nextPhase, eventName) {
@@ -525,18 +539,23 @@
       nextButton.textContent = firstDragDone ? "Начать эксперименты" : "Дальше";
       nextButton.disabled = !firstDragDone;
     } else if (sceneId === "bottleneck") {
-      if (!completed.has("bottleneck")) {
-        actionButton.hidden = true;
-        if (nodeActionButton) {
-          nodeActionButton.hidden = !["experiment.inviting", "experiment.completed"].includes(phase);
-          nodeActionButton.disabled = controlsLocked;
-        }
-      } else {
-        actionButton.textContent = branchAdded ? "Показать систему целиком" : "Добавить узел C3";
-      }
-      actionButton.disabled = controlsLocked || (!["experiment.inviting", "experiment.completed"].includes(phase) && !completed.has("bottleneck"));
-      nextButton.textContent = "Следующий эксперимент";
-      nextButton.disabled = !completed.has("bottleneck");
+      actionButton.hidden = true;
+      actionButton.textContent = bottleneckOverview ? "Скрыть обзор" : "Показать систему целиком";
+      actionButton.hidden = !completed.has("bottleneck");
+      actionButton.disabled = controlsLocked;
+      nodeActionButton.hidden = false;
+      nodeActionButton.textContent = selectedNode ? (node(selectedNode).powerLevel === 3 ? "Предельная мощность" : "Ускорить " + selectedNode) : "Выберите узел";
+      nodeActionButton.disabled = controlsLocked || !selectedNode || node(selectedNode).powerLevel >= 3;
+      powerDown.disabled = controlsLocked || !selectedNode || node(selectedNode).powerLevel === 0;
+      powerSlider.disabled = controlsLocked || !selectedNode;
+      powerSlider.value = selectedNode ? node(selectedNode).powerLevel : 0;
+      powerLabel.textContent = selectedNode ? `${selectedNode} · ${levelNames[node(selectedNode).powerLevel]}` : "Выберите участок";
+      document.querySelectorAll("[data-node]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.node === selectedNode));
+        button.disabled = controlsLocked;
+      });
+      nextButton.textContent = "Перейти к задержке";
+      nextButton.disabled = !completed.has("bottleneck") || controlsLocked;
     } else if (sceneId === "delay") {
       actionButton.textContent = text.action;
       nextButton.textContent = "Следующий эксперимент";
@@ -608,7 +627,16 @@
     const pos = pointerPosition(event);
     const picked = nearestNode(pos, true);
     pointer = { ...pointer, ...pos, down: true, node: picked, startedAt: performance.now(), startX: pos.x, startY: pos.y };
-    if (!picked) return;
+    if (!picked) {
+      if (sceneId === "bottleneck") {
+        const boundary = nearestNode(pos);
+        if (boundary?.role === "boundary") inspectBottleneckNode(boundary);
+      }
+      return;
+    }
+    holdApplied = false;
+    holdProgress = 0;
+    if (sceneId === "bottleneck") inspectBottleneckNode(picked);
     picked.fixed = true;
     root.classList.add("has-started");
     if (sceneId === "intro") {
@@ -642,11 +670,12 @@
       const wasTap = moved < 12 && performance.now() - pointer.startedAt < 700;
       pointer.node.fixed = false;
       if (sceneId === "intro") finishIntroDrag(pointer.node);
-      if (sceneId === "bottleneck" && wasTap && ["experiment.inviting", "experiment.completed"].includes(phase)) inspectBottleneckNode(pointer.node);
+      if (sceneId === "bottleneck" && wasTap && !controlsLocked) inspectBottleneckNode(pointer.node);
       if (sceneId === "missing" && ghostConnection && ghostConnection.visible && !ghostConnection.live) connectMissingLink();
     }
     pointer.down = false;
     pointer.node = null;
+    holdProgress = 0;
   }
 
   function finishIntroDrag(picked) {
@@ -664,35 +693,39 @@
     scheduleObservation(1.0, copy.intro.finalTitle, copy.intro.finalText, "После первого перемещения напряжение возникло в удалённой части системы.", "intro.first_observation", "first_observation_shown");
   }
 
+  function boundaryLabel(id) {
+    return id === "source" ? "Вход" : id === "out" ? "Выход" : id;
+  }
+
   function inspectBottleneckNode(target) {
     if (!target || target.role !== "work") {
-      showCopy("Это граница системы.", "Вход и выход показывают поток, но не являются участками обработки.", copy.bottleneck.state);
+      showCopy("Это граница системы.", "Вход и выход показывают поток. Их нельзя ускорять как участок обработки.");
       return;
     }
+    selectedNode = target.id;
     selectedNodes.clear();
-    const v = Math.round((target.processed || 0) * 100);
-    const cap = Math.round(target.capacity * 100);
-    const q = Math.round((target.queue || 0) * 100);
-    const isLimit = target.id === throughput.bottleneck;
-    if (isLimit) {
-      showCopy("Это текущее ограничение.", `${target.id}: v${v} / cap${cap} / q${q}. Здесь поток упёрся в предел.`, copy.bottleneck.state);
-      hint.textContent = "Действие находится рядом с красным LIMIT: уберите ограничение там, где оно возникло.";
-      pushEvent({
-        type: "state",
-        title: `Проверен ${target.id}`,
-        text: `${target.id} был определён как текущее ограничение потока.`,
-        metricDelta: `v${v}; cap${cap}; q${q}`,
-      });
-    } else {
-      showCopy("Это не текущее ограничение.", `${target.id}: v${v} / cap${cap} / q${q}. Участок важен, но сейчас итоговый поток ограничен в ${throughput.bottleneck}.`, copy.bottleneck.state);
-      hint.textContent = "Оптимизация вне LIMIT может улучшить участок, но не обязательно ускорит всю систему.";
-      pushEvent({
-        type: "state",
-        title: `Проверен ${target.id}`,
-        text: `${target.id} был просмотрен. Ограничение осталось в ${throughput.bottleneck}.`,
-        metricDelta: `v${v}; cap${cap}; q${q}`,
-      });
-    }
+    selectedNodes.add(target.id);
+    updateControls();
+  }
+
+  function changePower(level) {
+    if (sceneId !== "bottleneck" || controlsLocked || !selectedNode) return;
+    const item = node(selectedNode);
+    const nextLevel = Math.max(0, Math.min(3, Number(level)));
+    if (nextLevel === item.powerLevel) return;
+    const before = FlowModel.steady(flowModel);
+    const oldLevel = item.powerLevel;
+    flowModel.levels[item.id] = nextLevel;
+    item.powerLevel = nextLevel;
+    item.capacity = FlowModel.capacities(flowModel)[item.id];
+    item.effect = 1;
+    actionCount++;
+    intervention = { id: item.id, before, beforeQueue: flowModel.queues[before.limit] || 0, at: totalTime, increased: nextLevel > oldLevel };
+    controlsLocked = true;
+    setPhase("experiment.acting");
+    showCopy(nextLevel > oldLevel ? `${item.id} стал мощнее.` : `${item.id} замедлен.`, "Понаблюдайте, как изменится поток после этого участка.");
+    pushEvent({ title: `Мощность ${item.id} изменена`, text: `${levelNames[oldLevel]} → ${levelNames[nextLevel]}.`, metricDelta: `мощность ${Math.round(before.cap[item.id] * 100)} → ${Math.round(item.capacity * 100)}` });
+    emit("bottleneck_power_changed", { node: item.id, powerLevel: nextLevel });
     updateControls();
   }
 
@@ -706,14 +739,7 @@
       }
       return;
     }
-    if (sceneId === "bottleneck") {
-      if (completed.has("bottleneck")) {
-        if (branchAdded) showBottleneckOverview();
-        else addParallelBottleneckNode();
-      } else {
-        showCopy("Найдите ограничение на графе.", "Главное действие находится рядом с красным LIMIT.", copy.bottleneck.state);
-      }
-    }
+    if (sceneId === "bottleneck") showBottleneckOverview();
     if (sceneId === "delay") addDelayImpulse();
     if (sceneId === "missing") revealOrConnectMissing();
     if (sceneId === "final") loadScene("free");
@@ -721,95 +747,34 @@
   }
 
   function removeCurrentConstraint() {
-    if (sceneId !== "bottleneck" || completed.has("bottleneck") || controlsLocked) return;
-    const limitId = node(throughput.bottleneck) ? throughput.bottleneck : "C1";
-    selectedNodes.clear();
-    selectedNodes.add(limitId);
-    pushEvent({
-      type: "choice",
-      title: "Выбрано ограничение",
-      text: `Узел ${limitId} был выбран как текущий LIMIT. Запущено снятие ограничения.`,
-      metricDelta: `до: ${throughput.current} ед./такт`,
-    });
-    updateControls();
-    applyBottleneckOptimization();
+    if (selectedNode) changePower(node(selectedNode).powerLevel + 1);
   }
 
-  function calculateBottleneckFlow() {
+  function calculateBottleneckFlow(dt = 0) {
     if (sceneId !== "bottleneck") return throughput;
-    const getCap = (id) => node(id)?.capacity || 0;
-    const source = getCap("source");
-    const a = Math.min(source, getCap("A"));
-    const b = Math.min(a, getCap("B"));
-    const branches = branchAdded ? ["C1", "C2", "C3"] : ["C1", "C2"];
-    const shares = branchAdded ? { C1: 0.48, C2: 0.26, C3: 0.26 } : { C1: 0.7, C2: 0.3 };
-    let branchOut = 0;
-    let branchQueue = 0;
-    let branchLimit = null;
-
-    nodes.forEach((item) => {
-      item.speed = 0;
-      item.processed = 0;
-      if (item.role === "work") item.queue = Math.max(0, item.queue * 0.72);
-    });
-
-    node("A").processed = a;
-    node("B").processed = b;
-    node("A").speed = getCap("A");
-    node("B").speed = getCap("B");
-
-    branches.forEach((id) => {
-      const item = node(id);
-      if (!item) return;
-      const demand = b * shares[id];
-      const processed = Math.min(demand, item.capacity);
-      const queue = Math.max(0, demand - item.capacity);
+    const state = dt > 0 ? FlowModel.step(flowModel, dt) : FlowModel.steady(flowModel);
+    nodes.forEach(item => {
+      item.capacity = state.cap[item.id];
+      item.powerLevel = flowModel.levels[item.id] || 0;
+      item.processed = flowModel.processed[item.id] || 0;
       item.speed = item.capacity;
-      item.processed = processed;
-      item.queue = Math.min(1, queue / 0.18);
-      item.load = Math.min(1, item.baseLoad + item.queue * 0.55 + processed * 0.2);
-      branchOut += processed;
-      branchQueue += queue;
-      if (!branchLimit || queue > branchLimit.queue) branchLimit = { id, queue };
+      item.queue = Math.min(1, (flowModel.queues[item.id] || 0) / 0.65);
+      item.load = Math.min(1, 0.12 + item.queue * 0.68 + (item.processed / item.capacity) * 0.12);
     });
-
-    const dIn = branchOut;
-    const d = Math.min(dIn, getCap("D"));
-    const out = Math.min(d, getCap("out"));
-    node("D").speed = getCap("D");
-    node("D").processed = d;
-    node("D").queue = Math.min(1, Math.max(0, dIn - getCap("D")) / 0.18);
-    node("D").load = Math.min(1, node("D").baseLoad + node("D").queue * 0.58 + d * 0.18);
-    node("out").processed = out;
-
-    const candidates = nodes
-      .filter((item) => item.role === "work")
-      .map((item) => ({
-        id: item.id,
-        queue: item.queue || 0,
-        utilization: item.capacity ? (item.processed || 0) / item.capacity : 0,
-        spare: item.capacity - (item.processed || 0),
-      }));
-    const queuedLimit = candidates
-      .filter((item) => item.queue > 0.04)
-      .sort((x, y) => y.queue - x.queue || y.utilization - x.utilization)[0];
-    const saturatedLimit = candidates
-      .filter((item) => item.utilization > 0.92)
-      .sort((x, y) => x.spare - y.spare || y.utilization - x.utilization)[0];
-    const limiting = queuedLimit || saturatedLimit || candidates.sort((x, y) => x.spare - y.spare)[0] || { id: "D" };
-    const previous = throughput.current;
-    throughput.current = Math.round(out * 100);
-    throughput.changed = throughput.current - previous;
-    throughput.bottleneck = limiting.id;
+    node("source").processed = state.cap.source;
+    throughput.current = Math.round(flowModel.output * 100);
+    throughput.bottleneck = state.limit;
+    throughput.changed = throughput.current - throughput.before;
+    connections.forEach(item => {
+      const source = node(item.from);
+      const target = node(item.to);
+      let flow = source.processed;
+      if (item.from === "B") flow *= item.to === "C1" ? 0.65 : 0.35;
+      item.flow = flow;
+      item.queue = target.queue;
+      item.heat = Math.min(1, target.queue * 0.8);
+    });
     updateSidebarMetrics();
-
-    setLinkState("B", "C1", node("C1")?.processed || 0, node("C1")?.queue || 0);
-    setLinkState("B", "C2", node("C2")?.processed || 0, node("C2")?.queue || 0);
-    setLinkState("B", "C3", node("C3")?.processed || 0, node("C3")?.queue || 0);
-    setLinkState("C1", "D", node("C1")?.processed || 0, node("D").queue * 0.35);
-    setLinkState("C2", "D", node("C2")?.processed || 0, node("D").queue * 0.25);
-    setLinkState("C3", "D", node("C3")?.processed || 0, node("D").queue * 0.25);
-    setLinkState("D", "out", out, node("D").queue);
     return throughput;
   }
 
@@ -819,91 +784,6 @@
     item.flow = Math.min(1, 0.15 + flow);
     item.queue = Math.min(1, queue);
     item.heat = Math.max(item.heat, Math.min(1, queue * 0.9 + flow * 0.25));
-  }
-
-  function applyBottleneckOptimization() {
-    if (!selectedNodes.size) return;
-    const alreadyCompleted = completed.has("bottleneck");
-    controlsLocked = true;
-    setPhase("experiment.acting");
-    const selected = [...selectedNodes];
-    const before = throughput.current;
-
-    selected.forEach((id) => {
-      const item = node(id);
-      if (!item || item.powerLevel >= 3) return;
-      const beforeCap = Math.round(item.capacity * 100);
-      item.powerLevel += 1;
-      item.capacity = Math.min(1, item.capacity + [0.18, 0.12, 0.08][item.powerLevel - 1]);
-      item.effect = 1;
-      nodeEffects.set(id, 1);
-      item.load = Math.min(1, item.load + 0.12);
-      connectedLinks(id).forEach((connection) => {
-        connection.heat = Math.min(1, connection.heat + 0.32);
-        connection.flow = Math.min(1, connection.flow + 0.18);
-      });
-      pushEvent({
-        type: "action",
-        title: `Мощность ${id} увеличена`,
-        text: `${id} был усилен и получил больший предел обработки за такт.`,
-        metricDelta: `cap ${beforeCap} → ${Math.round(item.capacity * 100)}`,
-      });
-      emit("bottleneck_power_changed", { node: id, powerLevel: item.powerLevel });
-    });
-
-    calculateBottleneckFlow();
-    const after = throughput.current;
-    const delta = after - before;
-    const selectedText = selected.join(" + ");
-    const title = delta > 8 ? "Скорость системы выросла." : "Локальная скорость выросла.";
-    let text = `Было снято ограничение в ${selectedText}. Скорость системы: ${before} → ${after} ед./такт.`;
-    if (selected.includes("C1") && throughput.bottleneck === "D") text = `C1 перестал быть главным ограничением. Скорость выросла до ${after}, но теперь поток упирается в D.`;
-    else if (!selected.includes("C1") && node("C1").queue > 0.25) text = `Участки стали быстрее, но очередь перед C1 осталась. Скорость системы: ${before} → ${after}.`;
-    else if (selected.includes("C2") && !selected.includes("C1")) text = `C2 получил запас мощности, но основной поток всё ещё стоит в ветке C1. Скорость системы почти не изменилась.`;
-    else if (selected.includes("D") && node("C1").queue > 0.25) text = `D стал быстрее, но поток до него ограничен раньше. Это оптимизация не в текущем ограничении.`;
-
-    showCopy(title, text, `Скорость системы ${after} единиц за такт. Текущее ограничение: ${throughput.bottleneck}.`);
-    hint.textContent = "Смотрите на цифры у узлов: v - обработано, cap - мощность, q - очередь.";
-    pushEvent({
-      type: delta > 0 ? "result" : "limit",
-      title: "Новые данные системы",
-      text,
-      metricDelta: `throughput ${before} → ${after}; ограничение: ${throughput.bottleneck}`,
-    });
-    selectedNodes.clear();
-    if (alreadyCompleted) {
-      controlsLocked = false;
-      setPhase("experiment.completed");
-      updateControls();
-    } else {
-      scheduleObservation(1.4, copy.bottleneck.consequenceTitle, `Текущее ограничение: ${throughput.bottleneck}. По Голдратту именно оно задаёт throughput всей системы.`, copy.bottleneck.state, "experiment.observation", "experiment_key_event");
-    }
-  }
-
-  function addParallelBottleneckNode() {
-    if (branchAdded) return;
-    branchAdded = true;
-    const c3 = createNode(n("C3", 0.56, 0.51, 18, 0.12, true, { label: "C3", role: "work", capacity: 0.42 }));
-    nodes.push(c3);
-    connections.push(createConnection(c("B", "C3", 0.58)));
-    connections.push(createConnection(c("C3", "D", 0.58)));
-    calculateBottleneckFlow();
-    node("C3").effect = 1;
-    nodeEffects.set("C3", 1);
-    createParticles();
-    showCopy(
-      "Добавлен параллельный участок.",
-      `Часть потока ушла через C3. Скорость системы стала ${throughput.current} ед./такт, а ограничение теперь: ${throughput.bottleneck}.`,
-      copy.bottleneck.state
-    );
-    hint.textContent = "Добавление узла помогает только если оно разгружает ограничение, а не просто усложняет схему.";
-    pushEvent({
-      type: "action",
-      title: "Добавлен C3",
-      text: "Новый узел C3 был добавлен. Поток был разделён на дополнительную ветку.",
-      metricDelta: `throughput: ${throughput.current}; ограничение: ${throughput.bottleneck}`,
-    });
-    updateControls();
   }
 
   function addDelayImpulse() {
@@ -955,19 +835,10 @@
   }
 
   function showBottleneckOverview() {
-    bottleneckOverview = true;
-    showCopy(
-      "Скорость узла и скорость системы - не одно и то же.",
-      `Скорость системы ${throughput.current} ед./такт. Ограничение: ${throughput.bottleneck}. Смотрите на мощность, очередь и итоговый выход одновременно.`,
-      "В обзоре видны мощность узлов, локальная обработка, очередь и текущий ограничитель потока."
-    );
-    hint.textContent = "v - текущая обработка, cap - мощность, q - очередь. Throughput системы задаёт ограничение.";
-    pushEvent({
-      type: "state",
-      title: "Открыт обзор",
-      text: "Обзор был открыт. Для всех узлов были показаны v, cap и q.",
-      metricDelta: `throughput: ${throughput.current}; ограничение: ${throughput.bottleneck}`,
-    });
+    bottleneckOverview = !bottleneckOverview;
+    showCopy(bottleneckOverview ? "Сравните участок и всю систему." : copy.bottleneck.finalTitle,
+      bottleneckOverview ? `Вход: 86. Выход сейчас: ${throughput.current}. Установившийся выход: ${Math.round(FlowModel.steady(flowModel).output * 100)}. Ограничение: ${boundaryLabel(throughput.bottleneck)}.` : copy.bottleneck.finalText);
+    updateControls();
     emit("bottleneck_overview_opened");
   }
 
@@ -988,6 +859,7 @@
   }
 
   function simulate(dt) {
+    if (sceneId === "bottleneck" && paused) return;
     const scaledDt = dt * (sceneId === "delay" ? timeScale : 1);
     phaseTime += dt;
     totalTime += dt;
@@ -1038,28 +910,45 @@
       }
     }
 
-    if (sceneId === "bottleneck" && phase === "experiment.forming" && phaseTime > 1.2) {
-      setPhase("experiment.observing");
-      showCopy(copy.bottleneck.label, copy.bottleneck.thesis, copy.bottleneck.state);
-    }
-    if (sceneId === "bottleneck" && phase === "experiment.observing" && phaseTime > 2.5) {
-      setPhase("experiment.inviting");
-      showCopy("Перед C1 образуется очередь.", "Красный LIMIT показывает место, где поток упёрся в предел.", copy.bottleneck.state);
-    }
-    if (sceneId === "bottleneck" && phase === "experiment.observation" && !completed.has("bottleneck")) {
-      calculateBottleneckFlow();
-      const currentLimit = node(throughput.bottleneck);
-      if (currentLimit) {
-        currentLimit.queue = Math.min(1, currentLimit.queue + dt * 0.3);
-        currentLimit.load = Math.min(1, currentLimit.load + dt * 0.18);
+    if (sceneId === "bottleneck") {
+      if (pointer.down && pointer.node?.role === "work" && !controlsLocked && !holdApplied) {
+        holdProgress = Math.min(1, (performance.now() - pointer.startedAt) / 650);
+        if (holdProgress >= 1) {
+          holdApplied = true;
+          inspectBottleneckNode(pointer.node);
+          changePower(pointer.node.powerLevel + 1);
+        }
       }
-      if (phaseTime > 2.0) {
-        completed.add("bottleneck");
-        bottleneckOverview = true;
+      if (phase === "experiment.forming" && phaseTime > 1.2) setPhase("experiment.observing");
+      if (phase === "experiment.observing" && phaseTime > 3) {
+        setPhase("experiment.inviting");
+        showCopy("Один участок не справляется с потоком.", "Выберите участок и попробуйте его ускорить.");
+      }
+      if (intervention && totalTime - intervention.at > 2.4) {
+        const effect = intervention;
+        intervention = null;
+        const state = FlowModel.steady(flowModel);
+        const moved = state.limit !== effect.before.limit;
+        const delta = Math.round((state.output - effect.before.output) * 100);
+        let title, text;
+        if (moved) {
+          title = "Ограничение переместилось.";
+          text = state.limit === "out" ? "Теперь очередь образуется перед выходом. Граница системы тоже может ограничивать поток." : state.limit === "source" ? "Внутренние участки получили запас мощности. Теперь результат ограничен тем, сколько поступает на вход." : `Понаблюдайте за ${boundaryLabel(state.limit)}: поток теперь упирается в другой участок.`;
+        } else if (delta === 0) {
+          title = "Мощность узла изменилась. Итоговый поток — нет.";
+          text = "У участка появился запас мощности, но ограничение осталось в другом месте.";
+        } else {
+          title = delta > 0 ? "Поток стал быстрее." : "Поток стал медленнее.";
+          text = "Очереди продолжают меняться. Сравните участок с выходом всей системы.";
+        }
+        showCopy(title, text, title + " " + text);
+        pushEvent({ title, text, metricDelta: `установившийся выход ${Math.round(effect.before.output * 100)} → ${Math.round(state.output * 100)}` });
+        if (moved && effect.increased && effect.before.limit === baselineLimit && flowModel.queues[baselineLimit] < effect.beforeQueue && (flowModel.queues[state.limit] || 0) > 0.05) {
+          completed.add("bottleneck");
+          emit("experiment_completed", { id: "bottleneck" });
+        }
         controlsLocked = false;
-        showCopy(copy.bottleneck.finalTitle, copy.bottleneck.finalText, copy.bottleneck.state);
-        setPhase("experiment.completed");
-        emit("experiment_completed", { id: "bottleneck" });
+        setPhase(completed.has("bottleneck") ? "experiment.completed" : "experiment.inviting");
       }
     }
 
@@ -1078,7 +967,7 @@
   }
 
   function simulateNodes(dt) {
-    if (sceneId === "bottleneck") calculateBottleneckFlow();
+    if (sceneId === "bottleneck") calculateBottleneckFlow(dt * 2);
     nodes.forEach((item, index) => {
       if (!item.fixed) {
         const pull = sceneId === "free" ? 0.012 : 0.018;
@@ -1111,7 +1000,7 @@
       }
       const congestion = particle.link.queue + particle.link.heat * 0.4;
       const beforeQueue = congestion > 0.45 && particle.t > 0.56 && particle.t < 0.88;
-      const speed = particle.speed * (beforeQueue ? 0.22 : 1) * (1 - Math.min(0.55, congestion * 0.3));
+      const speed = particle.speed * (sceneId === "bottleneck" ? Math.max(0.05, particle.link.flow * 2) : 1) * (beforeQueue ? 0.22 : 1) * (1 - Math.min(0.55, congestion * 0.3));
       particle.t += dt * speed;
       particle.heat = Math.max(particle.heat * 0.96, particle.link.heat * 0.75, particle.link.queue * 0.45);
       if (beforeQueue && Math.random() < 0.08) particle.t -= 0.01;
@@ -1304,7 +1193,7 @@
       const hover = Math.hypot(pointer.x - item.x, pointer.y - item.y) < item.radius + 24;
       const selected = selectedNodes.has(item.id);
       const effect = item.effect || 0;
-      const constrained = sceneId === "bottleneck" && (item.id === throughput.bottleneck || (item.label && item.label === throughput.bottleneck));
+      const constrained = sceneId === "bottleneck" && bottleneckOverview && (item.id === throughput.bottleneck || (item.label && item.label === throughput.bottleneck));
       const load = Math.min(1, item.load + item.queue * 0.5);
       const radius = item.radius + load * 7 + (item.powerLevel || 0) * 2.8 + effect * 8 + (hover && item.interactive ? 4 : 0);
       ctx.save();
@@ -1334,19 +1223,28 @@
       ctx.beginPath();
       ctx.arc(item.x, item.y, Math.max(2, radius * 0.15), 0, Math.PI * 2);
       ctx.fill();
-      if (sceneId === "bottleneck") drawBottleneckNodeLabel(item, radius);
+      if (sceneId === "bottleneck") {
+        drawBottleneckNodeLabel(item, radius);
+        if (pointer.node === item && pointer.down && holdProgress > 0) {
+          ctx.strokeStyle = "#f4f1ea";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(item.x, item.y, radius + 10, -Math.PI / 2, -Math.PI / 2 + holdProgress * Math.PI * 2);
+          ctx.stroke();
+        }
+      }
       ctx.restore();
     });
   }
 
   function drawBottleneckNodeLabel(item, radius) {
-    const constrained = item.id === throughput.bottleneck || item.label === throughput.bottleneck;
+    const constrained = bottleneckOverview && (item.id === throughput.bottleneck || item.label === throughput.bottleneck);
     ctx.shadowBlur = 0;
     ctx.textAlign = "center";
-    ctx.font = "12px Cascadia Mono, Consolas, monospace";
+    ctx.font = "14px Cascadia Mono, Consolas, monospace";
     ctx.fillStyle = constrained ? "rgba(248,113,113,0.95)" : item.role === "boundary" ? "rgba(152,156,163,0.62)" : "rgba(244,241,234,0.78)";
-    ctx.fillText(constrained ? `${item.label} / LIMIT` : item.label, item.x, item.y - radius - 12);
-    if (item.role !== "work") return;
+    ctx.fillText(constrained ? `${item.label} · предел` : item.label, item.x, item.y - radius - 12);
+    if (item.role !== "work" || !bottleneckOverview) return;
     const v = Math.round((item.processed || 0) * 100);
     const cap = Math.round(item.capacity * 100);
     const q = Math.round((item.queue || 0) * 100);
@@ -1356,20 +1254,6 @@
     ctx.fillText(`q${q}`, item.x, y + 15);
   }
 
-  function drawBottleneckThroughput() {
-    const x = window.innerWidth < 760 ? 22 : 76;
-    const y = window.innerWidth < 760 ? height - 188 : height - 118;
-    ctx.save();
-    ctx.textAlign = "left";
-    ctx.font = "12px Cascadia Mono, Consolas, monospace";
-    ctx.fillStyle = "rgba(244,241,234,0.62)";
-    ctx.fillText(`скорость системы: ${throughput.current} ед./такт`, x, y);
-    ctx.fillStyle = throughput.changed > 0 ? "rgba(190,242,100,0.72)" : "rgba(249,115,22,0.68)";
-    ctx.fillText(`ограничение: ${throughput.bottleneck}`, x, y + 18);
-    ctx.fillStyle = "rgba(152,156,163,0.68)";
-    ctx.fillText("правило: throughput = min(мощности потока)", x, y + 36);
-    ctx.restore();
-  }
 
   function drawTimeLayer() {
     const y = height - (window.innerWidth < 760 ? 190 : 94);
@@ -1403,18 +1287,6 @@
     ctx.restore();
   }
 
-  function drawBottleneckOverview() {
-    const output = link("D", "out");
-    ctx.save();
-    ctx.font = "12px Cascadia Mono, Consolas, monospace";
-    ctx.textAlign = "right";
-    ctx.fillStyle = "rgba(244,241,234,0.52)";
-    ctx.fillText(`итоговый поток: ${throughput.current} ед./такт`, width - 52, height - 104);
-    ctx.fillStyle = "rgba(249,115,22,0.64)";
-    ctx.fillText(`текущее ограничение: ${throughput.bottleneck}`, width - 52, height - 84);
-    if (output) ctx.fillText(`очередь перед выходом: ${Math.round(output.queue * 100)}`, width - 52, height - 64);
-    ctx.restore();
-  }
 
   function loop(now) {
     const dt = Math.min(0.045, (now - lastTime) / 1000);
@@ -1463,6 +1335,15 @@
     });
   });
 
+  document.querySelectorAll("[data-node]").forEach(button => button.addEventListener("click", () => inspectBottleneckNode(node(button.dataset.node))));
+  powerSlider.addEventListener("input", () => changePower(powerSlider.value));
+  powerDown.addEventListener("click", () => selectedNode && changePower(node(selectedNode).powerLevel - 1));
+  pauseButton.addEventListener("click", () => {
+    paused = !paused;
+    pauseButton.textContent = paused ? "Продолжить" : "Пауза";
+    pauseButton.setAttribute("aria-pressed", String(paused));
+  });
+  window.addEventListener("pointercancel", onPointerUp);
   resize();
   loadScene("intro");
   requestAnimationFrame(loop);

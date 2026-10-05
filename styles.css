@@ -476,3 +476,58 @@ h1 {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Experiment controls share a fixed location, including keyboard and touch. */
+[hidden] { display: none !important; }
+.node-panel {
+  position: absolute;
+  z-index: 4;
+  top: 142px;
+  left: clamp(22px, 5vw, 76px);
+  right: clamp(22px, 5vw, 76px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  padding: 12px;
+  background: rgba(11, 13, 16, .9);
+  border: 1px solid var(--line);
+}
+.node-picker, .power-controls { display: flex; align-items: center; gap: 12px; }
+.power-controls { flex-wrap: wrap; }
+.node-picker button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+}
+.node-picker button[aria-pressed="true"] { border-color: var(--overload); background: rgba(249,115,22,.14); }
+button:focus-visible, input:focus-visible { outline: 2px solid #ffd39a; outline-offset: 4px; }
+button:disabled { cursor: default; opacity: .5; }
+#power-label { min-width: 160px; font-size: 14px; }
+#power-slider { width: 110px; accent-color: var(--overload); min-height: 44px; }
+.node-panel .node-action { position: static; transform: none; min-height: 44px; font-size: 14px; }
+.node-panel .node-action::before { content: none; }
+.experience[data-scene="bottleneck"] { min-height: 860px; }
+.experience[data-scene="bottleneck"] .hero { visibility: hidden; }
+.system-status { font-size: 14px; }
+.system-status .scene-label, .nav-item, .hint { font-size: 14px; }
+.system-status #observation-text { white-space: normal; max-width: 48vw; }
+.system-status .status-legend { display: none; }
+.terminal-bar { font-size: 12px; }
+.log-entry strong, .log-entry p { font-size: 14px; }
+#system-canvas { touch-action: none; }
+body { overflow-y: auto; }
+@media (max-width: 820px) {
+  body { overflow-y: auto; }
+  .experience[data-scene="bottleneck"] { height: max(100svh, 1100px); }
+  .node-panel { top: 182px; left: 14px; right: 14px; gap: 10px; }
+  .power-controls { gap: 8px 12px; }
+  #power-label { min-width: 145px; }
+  .node-picker { gap: 8px; }
+  .controls { left: 14px; right: 14px; flex-wrap: wrap; gap: 10px 16px; bottom: 72px; }
+  .controls .text-button { font-size: 14px; min-height: 44px; }
+  .terminal-console { bottom: 192px; height: 154px; }
+  .experiment-nav { width: calc(100vw - 28px); }
+}
