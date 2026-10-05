@@ -8,6 +8,7 @@
       name="description"
       content="Интерактивное исследование ограничений, потоков, задержек и связей внутри сложных систем."
     />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0d10'/%3E%3Cpath d='M6 16h20' stroke='%23cbd5e1' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23f97316'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -20,7 +21,7 @@
         <p class="thesis">Где возникает напряжение - там проявляется структура.</p>
         <button class="text-button primary" id="start-button" type="button">
           Исследовать
-          <span aria-hidden="true">→</span>
+
         </button>
       </section>
 
@@ -38,20 +39,35 @@
         <span id="observation-text">Потоки уже движутся.</span>
         <span>скорость: <strong id="metric-throughput">-</strong></span>
         <span>ограничение: <strong id="metric-bottleneck">-</strong></span>
-        <span class="status-legend">v факт · cap предел · q очередь</span>
+        <span class="status-legend">v поток · cap мощность · q очередь</span>
       </section>
 
       <section class="terminal-console" aria-label="Консоль событий системы" aria-live="polite">
         <div class="terminal-bar">
           <span>system.log</span>
-          <span id="log-count">0 lines</span>
+          <span id="log-count">0 событий</span>
         </div>
         <ol id="event-log-list"></ol>
       </section>
 
-      <button class="node-action" id="node-action-button" type="button" hidden>Убрать ограничение</button>
+      <section class="node-panel" id="node-panel" aria-label="Мощность участков" hidden>
+        <div class="node-picker" role="group" aria-label="Выберите рабочий узел">
+          <button type="button" data-node="A" aria-pressed="false">A</button>
+          <button type="button" data-node="B" aria-pressed="false">B</button>
+          <button type="button" data-node="C1" aria-pressed="false">C1</button>
+          <button type="button" data-node="C2" aria-pressed="false">C2</button>
+          <button type="button" data-node="D" aria-pressed="false">D</button>
+        </div>
+        <div class="power-controls">
+          <label id="power-label" for="power-slider">Выберите участок</label>
+          <input id="power-slider" type="range" min="0" max="3" step="1" value="0" aria-label="Уровень мощности выбранного узла" disabled />
+          <button class="text-button" id="power-down" type="button" disabled>Замедлить</button>
+          <button class="node-action" id="node-action-button" type="button" disabled>Выберите узел</button>
+        </div>
+      </section>
 
       <section class="controls" aria-label="Управление сценой">
+        <button class="text-button" id="pause-button" type="button" aria-pressed="false" hidden>Пауза</button>
         <button class="text-button" id="action-button" type="button">Воздействовать</button>
         <button class="text-button" id="reset-button" type="button">Сбросить</button>
         <button class="text-button" id="next-button" type="button">Дальше</button>
@@ -65,6 +81,7 @@
       </section>
     </main>
 
+    <script src="./flow-model.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>
