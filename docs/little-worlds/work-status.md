@@ -4,12 +4,12 @@ Updated: 2026-10-06. This file is the continuation point for work performed thro
 
 ## Current state
 
-- Roadmap, technical plan and C01 concept are merged into `main` as of `e3b09aa1b20fc4283285654b5a0b351988d81efa`.
-- The owner selected pixel direction A. See [decision D001](decisions.md) and [visual specification](visual-language.md).
-- A2 simplifies the cafe and clarifies the two action objects. A six-state static reference has been generated and shown in chat.
-- This change contains specifications and prompts only. Reference PNGs have not been uploaded to GitHub; asset import remains pending.
-- Next: make references available to implementers, verify source grid/layout at actual sizes, produce a representative motion proof, then complete V02/S01.
-- New app implementation, renderer validation, performance measurements and actual visitor observation remain pending.
+- Roadmap, C01 and selected pixel specification are merged as of `c226b53f76f79f940fb0a02d8780cbd89e083677`.
+- A runnable [cafe motion study](motion-study.md) now lives at `worlds/motion/`, with generated environment/actor exports, a small order cycle and accessible DOM controls.
+- Runtime art is imported in this change; original A/A2 comparison PNG upload remains separate and is not claimed complete.
+- Model checks and static build pass. Browser/device QA remains unavailable/pending; no motion/viewport/contrast acceptance is claimed.
+- Next: inspect the study, repair observed art/motion/layout issues, then complete V02/S01/S02 and the A01–A03 architecture gates.
+- Full world models, greenhouse, collection release and actual visitor observation remain pending.
 
 ## Working agreement for continuation
 
