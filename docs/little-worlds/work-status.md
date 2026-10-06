@@ -4,10 +4,12 @@ Updated: 2026-10-06. This file is the continuation point for work performed thro
 
 ## Current state
 
-- Roadmap and technical plan are merged into `main` as of baseline `a38dc4977bdf6b5a998c95064eabf0d87328ea7c`.
-- C01: [concept specification](concept.md) prepared in this change for review. It proposes café-first entry, two physical interventions, reversible exploration, and explicit session behavior.
-- New application implementation has not started. No visual direction, renderer, performance results, or visitor evidence has been validated.
-- Next package: V01, matched pixel and illustrated café reference scenes for a style decision.
+- Roadmap, technical plan and C01 concept are merged into `main` as of `e3b09aa1b20fc4283285654b5a0b351988d81efa`.
+- The owner selected pixel direction A. See [decision D001](decisions.md) and [visual specification](visual-language.md).
+- A2 simplifies the cafe and clarifies the two action objects. A six-state static reference has been generated and shown in chat.
+- This change contains specifications and prompts only. Reference PNGs have not been uploaded to GitHub; asset import remains pending.
+- Next: make references available to implementers, verify source grid/layout at actual sizes, produce a representative motion proof, then complete V02/S01.
+- New app implementation, renderer validation, performance measurements and actual visitor observation remain pending.
 
 ## Working agreement for continuation
 
@@ -22,7 +24,7 @@ Updated: 2026-10-06. This file is the continuation point for work performed thro
 ## Pending evidence and decisions
 
 - Review of the proposed concept, especially first-visit appeal and the two intervention objects.
-- V01 visual comparison and selected style.
+- Remaining V01 viewport/motion checks and V02 asset production; pixel medium is selected.
 - S01/S02 full scenarios, pacing and domain coefficients.
 - A02 renderer/device measurements and A03 ratified architecture.
 - Prototype implementation, automated/manual checks, and five actual visitor observations.
