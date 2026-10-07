@@ -95,6 +95,8 @@ Acceptance: another agent can produce a new object consistent with the scene wit
 
 ### S01: café director specification
 
+Accepted scope update (2026-10-07): use [cafe-scenario.md](cafe-scenario.md) and D002 in [decisions.md](decisions.md). The three interventions are kitchen pace, one serving/cleanup helper and entrance admission. Implement the complete customer/order/table lifecycle, including eating, departure and cleanup before table reuse. This scope decision does not complete numerical tuning or S01 acceptance.
+
 For every action, specify target, gesture, keyboard equivalent, precondition, command payload, immediate feedback, delayed consequence, latency range, visible evidence, repetition limit, reversibility, and behavior while paused. Add composition sketches showing where attention travels through the causal chain.
 
 Proposed actions to evaluate, rather than mechanically implement:
