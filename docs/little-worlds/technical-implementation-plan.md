@@ -115,6 +115,8 @@ Specify what happens with no intervention, a weak intervention, reversed interve
 
 ### S02: greenhouse contrast specification
 
+Implementation baseline: [greenhouse-scenario.md](greenhouse-scenario.md) specifies one fixed watering dose, normalized soil/root/posture dynamics, accumulated excess and delayed response. Its reference traces/checks support S02 design; playable review, production timestep/lifecycle tests and visual/visitor evidence remain pending.
+
 Define one intervention and a delayed response for the prototype, then candidates for the finished second world. Choose stylized physical quantities and units: soil moisture, light exposure, temperature or ventilation, and plant response. Record their limits and simplifications.
 
 Describe the difference between an immediate environmental change and slower plant response. A plant cannot instantly recover simply because a recovery animation plays. Define how a visitor notices waiting, cumulative influence, and excessive correction without reading a parameter panel.
