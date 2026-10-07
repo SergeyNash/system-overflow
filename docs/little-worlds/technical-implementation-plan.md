@@ -95,6 +95,8 @@ Acceptance: another agent can produce a new object consistent with the scene wit
 
 ### S01: café director specification
 
+Accepted scope update (2026-10-07): use [cafe-scenario.md](cafe-scenario.md) and D002 in [decisions.md](decisions.md). The three interventions are kitchen pace, one serving/cleanup helper and entrance admission. Implement the complete customer/order/table lifecycle, including eating, departure and cleanup before table reuse. This scope decision does not complete numerical tuning or S01 acceptance.
+
 For every action, specify target, gesture, keyboard equivalent, precondition, command payload, immediate feedback, delayed consequence, latency range, visible evidence, repetition limit, reversibility, and behavior while paused. Add composition sketches showing where attention travels through the causal chain.
 
 Proposed actions to evaluate, rather than mechanically implement:
@@ -112,6 +114,8 @@ Choose a baseline seed that generates a visible problem through normal rules. De
 Specify what happens with no intervention, a weak intervention, reversed interventions, maximum levels, fast repeated taps, gesture cancellation, reset during feedback, and navigation during loading. Keep the world interesting after the first causal discovery.
 
 ### S02: greenhouse contrast specification
+
+Implementation baseline: [greenhouse-scenario.md](greenhouse-scenario.md) specifies one fixed watering dose, normalized soil/root/posture dynamics, accumulated excess and delayed response. Its reference traces/checks support S02 design; playable review, production timestep/lifecycle tests and visual/visitor evidence remain pending.
 
 Define one intervention and a delayed response for the prototype, then candidates for the finished second world. Choose stylized physical quantities and units: soil moisture, light exposure, temperature or ventilation, and plant response. Record their limits and simplifications.
 

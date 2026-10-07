@@ -1,6 +1,12 @@
 # Little Worlds: Work Status
 
+**Latest reconciliation (2026-10-07):** motion-study PR #6 incorporates main `85be73eeb52d4179bbdf3b48b590b529c00ab937`, including S01/S02 and A01. The static build uses main's conditional world copy and test exclusions; the study assets/page remain available at `/worlds/motion/`. This resolves integration conflicts, not the reported table-path or dish-lifecycle defects. Owner visual acceptance remains iteration 0; browser/device evidence remains pending.
+
+**Toolchain continuation (2026-10-07):** [A01 bootstrap](toolchain.md) adds pinned dependencies, strict TypeScript, Vite/Vitest, clean static output and CI. Next: A02 representative renderer checks, then A03 shared world/clock/lifecycle contracts. Earlier status sections below are historical checkpoints.
+
 Updated: 2026-10-06. This file is the continuation point for work performed through the project chat. Read alongside the [roadmap](../little-worlds-roadmap.md) and [technical plan](technical-implementation-plan.md).
+
+Latest continuation update: **2026-10-07 — S02 greenhouse response**, below. Earlier sections describe historical checkpoints.
 
 ## Current state
 
@@ -30,3 +36,27 @@ Updated: 2026-10-06. This file is the continuation point for work performed thro
 - Prototype implementation, automated/manual checks, and five actual visitor observations.
 
 No scheduled background work or autonomous work between chat turns is implied by this agreement.
+
+## Accepted café scope — 2026-10-07
+
+This update supersedes the older next-step notes above for café scope. The owner reviewed the published motion study from [PR #6](https://github.com/SergeyNash/system-overflow/pull/6) and accepted its graphics/movement for iteration 0. Server/table overlap and unreadable dish disappearance remain observed defects. PR #6 is still open at this update; this documentation PR is based on current `main` and does not duplicate its runtime files.
+
+The owner accepted [D002](decisions.md) and [cafe-scenario.md](cafe-scenario.md): full visitor arrival/queue/service/eating/exit lifecycle, cleanup before table reuse, and a third intervention controlling admission. New arrivals pass by during admission pause; already accepted guests continue. Numerical timing and the complete director specification remain pending.
+
+Next: complete S01 timing/job-policy/causal traces, V02 lifecycle assets and the required architecture gates, then implement a complete playable lifecycle slice. Fix paths through aisles and show eating/empty plates/cleanup. Greenhouse S02 and browser/device/performance/visitor evidence remain pending. Documentation acceptance does not mean these behaviors are already implemented or published.
+
+## S01 director tuning — 2026-10-07
+
+- Main baseline: `66498f3e666bf636489a7cd3f876edd7d7a196af`, after PR #7. PR #6 remains a separate pending motion-study change; no runtime study files are copied into this branch.
+- [Director tuning](cafe-director-tuning.md) specifies numerical durations/capacities, seeded arrivals, FIFO delivery/cleanup allocation, helper reversals, cooking progress semantics, controls and first-30-second evidence.
+- Dependency-free reference calculations in `tools/cafe-scenario/` reproduce [causal traces](cafe-scenario-traces.md). These are scenario evidence, not the final world model or a playable change.
+- Checks cover full visits/cleanup, dish/customer accounting, admission drain/reopen, helper releases/reversals, repeated/invalid inputs, deterministic replay and 30-minute extremes/rapid toggles. No browser measurements or visitor evidence are implied.
+- Next package: S02 greenhouse equations/timing and response trace, then A01–A03 shared architecture/renderer decisions alongside V02 lifecycle assets. Transfer the S01 rules into P01 only after those contracts exist. Playable café review remains required to ratify these initial timings.
+
+## S02 greenhouse response — 2026-10-07
+
+- Main baseline: `8bb0cd8f337dd467784e71fc37dbd3f124d1854a`, after PR #8.
+- [Greenhouse scenario](greenhouse-scenario.md) defines one watering action, immediate soil change, two filtered response lags, accumulated excess, finite runoff, first-visit direction and state-to-visual mappings.
+- `tools/greenhouse-scenario/` reproduces [response traces](greenhouse-scenario-traces.md) and checks one/repeated/rapid/spaced doses, recovery, deterministic replay and per-tick bounds/water accounting across 30-minute input regimes.
+- These are stylized scenario calculations, not botanical predictions, production model contracts or website changes. Numeric tuning needs playable review. Art/device/accessibility/performance and visitor evidence remain pending.
+- Next bounded work: A01 toolchain/bootstrap, then A02 representative rendering/viewport measurements and A03 shared clock/world/lifecycle contracts. Use café discrete jobs and greenhouse continuous lag as the two contract cases. V02 asset production remains parallel project work, without assuming it has already been done.
