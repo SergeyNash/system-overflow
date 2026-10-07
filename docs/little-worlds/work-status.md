@@ -2,6 +2,8 @@
 
 Updated: 2026-10-06. This file is the continuation point for work performed through the project chat. Read alongside the [roadmap](../little-worlds-roadmap.md) and [technical plan](technical-implementation-plan.md).
 
+Latest continuation update: **2026-10-07 — S01 director tuning**, below. Earlier sections describe historical checkpoints.
+
 ## Current state
 
 - Roadmap, technical plan and C01 concept are merged into `main` as of `e3b09aa1b20fc4283285654b5a0b351988d81efa`.
@@ -38,3 +40,11 @@ This update supersedes the older next-step notes above for café scope. The owne
 The owner accepted [D002](decisions.md) and [cafe-scenario.md](cafe-scenario.md): full visitor arrival/queue/service/eating/exit lifecycle, cleanup before table reuse, and a third intervention controlling admission. New arrivals pass by during admission pause; already accepted guests continue. Numerical timing and the complete director specification remain pending.
 
 Next: complete S01 timing/job-policy/causal traces, V02 lifecycle assets and the required architecture gates, then implement a complete playable lifecycle slice. Fix paths through aisles and show eating/empty plates/cleanup. Greenhouse S02 and browser/device/performance/visitor evidence remain pending. Documentation acceptance does not mean these behaviors are already implemented or published.
+
+## S01 director tuning — 2026-10-07
+
+- Main baseline: `66498f3e666bf636489a7cd3f876edd7d7a196af`, after PR #7. PR #6 remains a separate pending motion-study change; no runtime study files are copied into this branch.
+- [Director tuning](cafe-director-tuning.md) specifies numerical durations/capacities, seeded arrivals, FIFO delivery/cleanup allocation, helper reversals, cooking progress semantics, controls and first-30-second evidence.
+- Dependency-free reference calculations in `tools/cafe-scenario/` reproduce [causal traces](cafe-scenario-traces.md). These are scenario evidence, not the final world model or a playable change.
+- Checks cover full visits/cleanup, dish/customer accounting, admission drain/reopen, helper releases/reversals, repeated/invalid inputs, deterministic replay and 30-minute extremes/rapid toggles. No browser measurements or visitor evidence are implied.
+- Next package: S02 greenhouse equations/timing and response trace, then A01–A03 shared architecture/renderer decisions alongside V02 lifecycle assets. Transfer the S01 rules into P01 only after those contracts exist. Playable café review remains required to ratify these initial timings.

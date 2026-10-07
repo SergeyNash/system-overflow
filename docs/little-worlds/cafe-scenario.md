@@ -2,6 +2,8 @@
 
 Date: 2026-10-07. Work package: S01. Status: lifecycle and intervention scope accepted by the owner; numerical tuning, complete director specification and implementation remain pending.
 
+Implementation baseline update: [cafe-director-tuning.md](cafe-director-tuning.md) supplies initial durations, job allocation, helper/rate semantics and reproducible causal traces. Treat the numerical values as a testable engineering baseline; playable review and production implementation remain pending.
+
 This specification supersedes the repeated guest/order cycle in the [motion study PR #6](https://github.com/SergeyNash/system-overflow/pull/6). Read with [concept](concept.md), [technical plan](technical-implementation-plan.md) and [decision log](decisions.md). It does not mark S01 or the architecture gates complete.
 
 ## 1. Owner feedback and accepted scope
@@ -41,7 +43,7 @@ Queue capacity and arrival cadence are tuning parameters still to be chosen. For
 
 Provide native keyboard-operable DOM equivalents with the same commands and current states. While user-paused, disable world-changing actions with a clear reason; retain reset/navigation. Hidden-tab suspension, same-seed reset and pause preservation follow the concept/runtime contract.
 
-The exact policy for changing the rate of an in-progress preparation task and toggling a helper during arrival/departure remains an S01 tuning decision to document before implementation. Repeated input must remain idempotent and bounded.
+The [director tuning](cafe-director-tuning.md) defines in-progress rate changes and helper arrival/departure reversals. Repeated input must remain idempotent and bounded.
 
 ## 5. Causality and exploration
 
