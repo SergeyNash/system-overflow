@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f4e7cd"><title>Маленькое кафе — движение</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<main>
+  <header><a class="back" href="../../">System Overflow</a><span class="tag">ПРОБА ДВИЖЕНИЯ</span><h1>Маленькое кафе</h1><p>Понаблюдай. Измени темп кухни. Позови помощника.</p></header>
+  <section class="world" aria-label="Кафе">
+    <div class="stage" id="stage" aria-busy="true">
+      <canvas id="scene" width="768" height="512" role="img" aria-label="Повар готовит, блюда ждут на выдаче, официанты разносят заказы. Управление находится под сценой."></canvas>
+      <button class="object dial" id="dial" aria-label="Темп кухни: обычно. Нажми для изменения" title="Темп кухни"><span class="dial-face"><span id="needle"></span></span><span class="object-label">Темп кухни</span></button>
+      <button class="object apron" id="apron" aria-label="Позвать помощника" aria-pressed="false" title="Помощник"><span class="apron-art" aria-hidden="true">▥</span><span class="object-label">Помощник</span></button>
+      <div id="loading" class="loading" role="status">Открываем кафе…</div>
+    </div>
+    <div class="controls">
+      <fieldset id="pace-controls"><legend>Темп кухни</legend><div class="choices"><button data-pace="0" aria-pressed="false">Спокойно</button><button data-pace="1" aria-pressed="true">Обычно</button><button data-pace="2" aria-pressed="false">Быстро</button></div></fieldset>
+      <button id="helper" aria-pressed="false">Позвать помощника</button>
+    </div>
+    <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Кафе живёт своим ритмом.</p>
+    <nav class="transport" aria-label="Управление демонстрацией"><button id="pause">Пауза</button><button id="reset">Сначала</button><label><input id="reduce" type="checkbox"> Меньше движения</label></nav>
+  </section>
+  <footer><p>Это проба графики и движения. Здесь небольшой повторяющийся цикл заказов; посетители, баланс и полная модель кафе ещё впереди.</p><details><summary>Что проверить</summary><p>Различимы ли повар и официанты? Видно ли, что блюда ждут выдачи? Удобны ли два действия на телефоне? Нет ли скачков персонажей при смене поз?</p></details></footer>
+</main>
+<script type="module" src="app.mjs"></script>
+</body></html>
