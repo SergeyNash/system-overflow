@@ -2,6 +2,8 @@
 
 Date: 2026-10-06. Work package: C01. Status: proposed concept specification, ready for review; experience validation is pending.
 
+Update 2026-10-07: [D001](decisions.md) selects pixel art. [D002 and the accepted café scenario](cafe-scenario.md) supersede the café's two-action-only scope below: the prototype now includes an entrance admission sign, a complete customer lifecycle and staff cleanup before table reuse. Other concept hypotheses and validation gates remain pending.
+
 Scope sources: [roadmap](../little-worlds-roadmap.md) and [technical implementation plan](technical-implementation-plan.md). Baseline: `a38dc4977bdf6b5a998c95064eabf0d87328ea7c`.
 
 ## 1. Promise and visitor

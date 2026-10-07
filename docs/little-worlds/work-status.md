@@ -30,3 +30,11 @@ Updated: 2026-10-06. This file is the continuation point for work performed thro
 - Prototype implementation, automated/manual checks, and five actual visitor observations.
 
 No scheduled background work or autonomous work between chat turns is implied by this agreement.
+
+## Accepted café scope — 2026-10-07
+
+This update supersedes the older next-step notes above for café scope. The owner reviewed the published motion study from [PR #6](https://github.com/SergeyNash/system-overflow/pull/6) and accepted its graphics/movement for iteration 0. Server/table overlap and unreadable dish disappearance remain observed defects. PR #6 is still open at this update; this documentation PR is based on current `main` and does not duplicate its runtime files.
+
+The owner accepted [D002](decisions.md) and [cafe-scenario.md](cafe-scenario.md): full visitor arrival/queue/service/eating/exit lifecycle, cleanup before table reuse, and a third intervention controlling admission. New arrivals pass by during admission pause; already accepted guests continue. Numerical timing and the complete director specification remain pending.
+
+Next: complete S01 timing/job-policy/causal traces, V02 lifecycle assets and the required architecture gates, then implement a complete playable lifecycle slice. Fix paths through aisles and show eating/empty plates/cleanup. Greenhouse S02 and browser/device/performance/visitor evidence remain pending. Documentation acceptance does not mean these behaviors are already implemented or published.
