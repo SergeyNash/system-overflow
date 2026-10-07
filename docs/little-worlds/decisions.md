@@ -1,5 +1,15 @@
 # Little Worlds: Decision Log
 
+## D003 — Renderer selection remains provisional
+
+- Date: 2026-10-07.
+- Status: pending actual-device review; no renderer ratification claimed.
+- Candidates: Canvas 2D and PixiJS 8.21.0 with WebGL preference, through interchangeable draw adapters.
+- Evidence available: [representative spike](renderer-spike.md), real café art/actor workload, continuous plant-state inset, geometry/picking tests and measured build sizes.
+- Missing evidence: actual viewport/readability, initialization/interaction/frame behavior, filtering/layering, resource teardown and target-device load cost.
+- Consequence: A03 world rules and lifecycle must depend on an adapter contract rather than either drawing library. Canvas is the review page's default, not the final renderer decision.
+- Decision rule: compare actual device results with technical-plan budgets and record the rejected alternative and reason before treating A02 as passed.
+
 ## D002 — Complete café lifecycle and admission control
 
 - Date: 2026-10-07.

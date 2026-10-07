@@ -10,4 +10,9 @@ function walk(dir) {
   }
 }
 walk('dist'); assert(existsSync('dist/worlds/navigation.js'));
+if(existsSync('worlds/rendering/index.html')) {
+  const html=readFileSync('dist/worlds/rendering/index.html','utf8');
+  assert(!html.includes('.ts"'),'Uncompiled TypeScript entry in spike output');
+  assert(/type="module"[^>]+\/assets\//.test(html),'Compiled spike entry missing');
+}
 console.log('Legacy output is byte-identical; typed navigation bundle exists; no development files in dist.');

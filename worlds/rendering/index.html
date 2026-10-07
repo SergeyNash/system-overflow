@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Проба отрисовки маленьких миров</title><link rel="stylesheet" href="./style.css"></head>
+<body><main><header><p>Маленькие миры · проверка отрисовки</p><h1>Кафе и теплица</h1>
+<p>Одинаковая сцена для двух способов отрисовки. Это техническая проба, полный сценарий ещё впереди.</p></header>
+<section class="controls" aria-label="Настройки проверки">
+<label>Отрисовка <select id="renderer"><option value="canvas">Canvas</option><option value="pixi">PixiJS / WebGL</option></select></label>
+<label>Компоновка <select id="layout"><option value="auto">По ширине экрана</option><option value="desktop">Компьютер</option><option value="portrait">Телефон</option></select></label>
+<label><input id="guides" type="checkbox"> Показать границы столов и проходы</label>
+<label><input id="reduce" type="checkbox"> Меньше движения</label>
+</section>
+<div id="stage" aria-busy="true"></div><p id="status" role="status">Загружаем сцену…</p>
+<section class="controls" aria-label="Действия"><button id="dial" disabled>Изменить темп кухни</button>
+<button id="helper" disabled>Позвать помощника</button><button id="water" disabled>Полить растение</button>
+<button id="pause" disabled>Пауза</button><button id="reset" disabled>Сначала</button><button id="retry">Перезапустить отрисовку</button></section>
+<details><summary>Измерения на этом устройстве</summary>
+<p>Время кадров и вызова отрисовки измеряется здесь. Это не время работы GPU и не оценка понимания сцены.</p>
+<pre id="metrics">Недостаточно кадров для измерения.</pre><button id="copy">Скопировать измерения</button></details>
+<p><a href="../motion/">Исходная проба кафе</a></p></main>
+<script type="module" src="../../src/debug/rendering-spike.ts"></script></body></html>

@@ -13,5 +13,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "vite.config.mts", "vitest.config.mts"]
+  "include": ["src/**/*.ts", "vite.config.mts", "vite.spike.config.mts", "vitest.config.mts"]
 }
