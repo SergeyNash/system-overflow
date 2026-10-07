@@ -1,5 +1,7 @@
 # Little Worlds: Work Status
 
+**Toolchain continuation (2026-10-07):** [A01 bootstrap](toolchain.md) adds pinned dependencies, strict TypeScript, Vite/Vitest, clean static output and CI. Local checks pass; remote CI/browser/renderer evidence remains pending. Next: A02 representative renderer checks, then A03 shared world/clock/lifecycle contracts. PR #10's greenhouse scenario remains separate from this main baseline.
+
 Updated: 2026-10-06. This file is the continuation point for work performed through the project chat. Read alongside the [roadmap](../little-worlds-roadmap.md) and [technical plan](technical-implementation-plan.md).
 
 Latest continuation update: **2026-10-07 — S02 greenhouse response**, below. Earlier sections describe historical checkpoints.
