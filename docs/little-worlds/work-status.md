@@ -2,7 +2,7 @@
 
 Updated: 2026-10-06. This file is the continuation point for work performed through the project chat. Read alongside the [roadmap](../little-worlds-roadmap.md) and [technical plan](technical-implementation-plan.md).
 
-Latest continuation update: **2026-10-07 — S01 director tuning**, below. Earlier sections describe historical checkpoints.
+Latest continuation update: **2026-10-07 — S02 greenhouse response**, below. Earlier sections describe historical checkpoints.
 
 ## Current state
 
@@ -48,3 +48,11 @@ Next: complete S01 timing/job-policy/causal traces, V02 lifecycle assets and the
 - Dependency-free reference calculations in `tools/cafe-scenario/` reproduce [causal traces](cafe-scenario-traces.md). These are scenario evidence, not the final world model or a playable change.
 - Checks cover full visits/cleanup, dish/customer accounting, admission drain/reopen, helper releases/reversals, repeated/invalid inputs, deterministic replay and 30-minute extremes/rapid toggles. No browser measurements or visitor evidence are implied.
 - Next package: S02 greenhouse equations/timing and response trace, then A01–A03 shared architecture/renderer decisions alongside V02 lifecycle assets. Transfer the S01 rules into P01 only after those contracts exist. Playable café review remains required to ratify these initial timings.
+
+## S02 greenhouse response — 2026-10-07
+
+- Main baseline: `8bb0cd8f337dd467784e71fc37dbd3f124d1854a`, after PR #8.
+- [Greenhouse scenario](greenhouse-scenario.md) defines one watering action, immediate soil change, two filtered response lags, accumulated excess, finite runoff, first-visit direction and state-to-visual mappings.
+- `tools/greenhouse-scenario/` reproduces [response traces](greenhouse-scenario-traces.md) and checks one/repeated/rapid/spaced doses, recovery, deterministic replay and per-tick bounds/water accounting across 30-minute input regimes.
+- These are stylized scenario calculations, not botanical predictions, production model contracts or website changes. Numeric tuning needs playable review. Art/device/accessibility/performance and visitor evidence remain pending.
+- Next bounded work: A01 toolchain/bootstrap, then A02 representative rendering/viewport measurements and A03 shared clock/world/lifecycle contracts. Use café discrete jobs and greenhouse continuous lag as the two contract cases. V02 asset production remains parallel project work, without assuming it has already been done.
