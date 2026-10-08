@@ -11,7 +11,7 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node", "vite/client"]
   },
-  "include": ["src/**/*.ts", "vite.config.mts", "vitest.config.mts"]
+  "include": ["src/**/*.ts", "vite.config.mts", "vite.spike.config.mts", "vitest.config.mts"]
 }

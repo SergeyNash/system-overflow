@@ -2,7 +2,9 @@
   "name": "system-overflow",
   "version": "0.1.0",
   "private": true,
-  "engines": { "node": ">=24.19.0 <25" },
+  "engines": {
+    "node": ">=24.19.0 <25"
+  },
   "packageManager": "npm@11.9.0",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -10,7 +12,7 @@
     "test": "vitest run && node tools/toolchain/test-reference.mjs",
     "test:legacy": "node --test flow-model.test.cjs",
     "validate:assets": "node tools/toolchain/validate-assets.mjs",
-    "build": "node build-static.mjs && vite build && node tools/toolchain/verify-build.mjs",
+    "build": "node build-static.mjs && vite build && vite build --config vite.spike.config.mts && node tools/toolchain/verify-build.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "check": "npm run typecheck && npm test && npm run validate:assets && npm run build"
   },
@@ -19,5 +21,8 @@
     "typescript": "6.0.2",
     "vite": "8.3.3",
     "vitest": "5.0.3"
+  },
+  "dependencies": {
+    "pixi.js": "8.21.0"
   }
 }
