@@ -1,87 +1,20 @@
 <!doctype html>
-<html lang="ru">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Система под нагрузкой</title>
-    <meta
-      name="description"
-      content="Интерактивное исследование ограничений, потоков, задержек и связей внутри сложных систем."
-    />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0d10'/%3E%3Cpath d='M6 16h20' stroke='%23cbd5e1' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23f97316'/%3E%3C/svg%3E" />
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <main class="experience" aria-labelledby="site-title">
-      <canvas id="system-canvas" aria-hidden="true"></canvas>
-
-      <section class="hero" aria-live="polite">
-        <p class="kicker">Интерактивное исследование</p>
-        <h1 id="site-title">Система под нагрузкой</h1>
-        <p class="thesis">Где возникает напряжение - там проявляется структура.</p>
-        <button class="text-button primary" id="start-button" type="button">
-          Исследовать
-
-        </button>
-      </section>
-
-      <nav class="experiment-nav" aria-label="Эксперименты">
-        <button class="nav-item is-active" type="button" data-scene="intro">Вход</button>
-        <button class="nav-item" type="button" data-scene="bottleneck">01 Узкое место</button>
-        <button class="nav-item" type="button" data-scene="delay">02 Задержка</button>
-        <button class="nav-item" type="button" data-scene="missing">03 Связь</button>
-        <button class="nav-item" type="button" data-scene="free">Свободно</button>
-      </nav>
-
-      <section class="system-status" aria-live="polite" aria-label="Текущее состояние системы">
-        <span class="scene-label" id="scene-label">Живая система</span>
-        <span id="observation-title">Система проявляется.</span>
-        <span id="observation-text">Потоки уже движутся.</span>
-        <span>скорость: <strong id="metric-throughput">-</strong></span>
-        <span>ограничение: <strong id="metric-bottleneck">-</strong></span>
-        <span class="status-legend">v поток · cap мощность · q очередь</span>
-      </section>
-
-      <section class="terminal-console" aria-label="Консоль событий системы" aria-live="polite">
-        <div class="terminal-bar">
-          <span>system.log</span>
-          <span id="log-count">0 событий</span>
-        </div>
-        <ol id="event-log-list"></ol>
-      </section>
-
-      <section class="node-panel" id="node-panel" aria-label="Мощность участков" hidden>
-        <div class="node-picker" role="group" aria-label="Выберите рабочий узел">
-          <button type="button" data-node="A" aria-pressed="false">A</button>
-          <button type="button" data-node="B" aria-pressed="false">B</button>
-          <button type="button" data-node="C1" aria-pressed="false">C1</button>
-          <button type="button" data-node="C2" aria-pressed="false">C2</button>
-          <button type="button" data-node="D" aria-pressed="false">D</button>
-        </div>
-        <div class="power-controls">
-          <label id="power-label" for="power-slider">Выберите участок</label>
-          <input id="power-slider" type="range" min="0" max="3" step="1" value="0" aria-label="Уровень мощности выбранного узла" disabled />
-          <button class="text-button" id="power-down" type="button" disabled>Замедлить</button>
-          <button class="node-action" id="node-action-button" type="button" disabled>Выберите узел</button>
-        </div>
-      </section>
-
-      <section class="controls" aria-label="Управление сценой">
-        <button class="text-button" id="pause-button" type="button" aria-pressed="false" hidden>Пауза</button>
-        <button class="text-button" id="action-button" type="button">Воздействовать</button>
-        <button class="text-button" id="reset-button" type="button">Сбросить</button>
-        <button class="text-button" id="next-button" type="button">Дальше</button>
-      </section>
-
-      <p class="hint" id="interaction-hint">Наведите курсор на узел.</p>
-
-      <section class="sr-only" aria-live="polite">
-        <h2>Текущее состояние системы</h2>
-        <p id="accessible-state">Система формируется из узлов, связей и потоков.</p>
-      </section>
-    </main>
-
-    <script src="./flow-model.js"></script>
-    <script src="./app.js"></script>
-  </body>
-</html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Маленькие миры</title><link rel="stylesheet" href="/worlds/rendering/style.css"></head>
+<body><main><header><p>Маленькие миры · рабочий прототип</p><h1>Кафе и теплица</h1>
+<p>Меняй темп кухни, зови помощника и поливай растение. Сейчас проверяем движение и постепенную реакцию растения; полный цикл гостей ещё впереди.</p></header>
+<details><summary>Настройки проверки</summary><section class="controls" aria-label="Настройки проверки">
+<label>Отрисовка <select id="renderer"><option value="canvas">Canvas</option><option value="pixi">PixiJS / WebGL</option></select></label>
+<label>Компоновка <select id="layout"><option value="auto">По ширине экрана</option><option value="desktop">Компьютер</option><option value="portrait">Телефон</option></select></label>
+<label><input id="guides" type="checkbox"> Показать границы столов и проходы</label>
+<label><input id="reduce" type="checkbox"> Меньше движения</label>
+</section></details>
+<div id="stage" aria-busy="true"></div><p id="status" role="status">Загружаем сцену…</p>
+<section class="controls" aria-label="Действия"><button id="dial" disabled>Изменить темп кухни</button>
+<button id="helper" disabled>Позвать помощника</button><button id="water" disabled>Полить растение</button>
+<button id="pause" disabled>Пауза</button><button id="reset" disabled>Сначала</button><button id="retry">Перезапустить отрисовку</button></section>
+<details><summary>Измерения на этом устройстве</summary>
+<p>Время кадров и вызова отрисовки измеряется здесь. Это не время работы GPU и не оценка понимания сцены.</p>
+<pre id="metrics">Недостаточно кадров для измерения.</pre><button id="copy">Скопировать измерения</button></details>
+</main>
+<script type="module" src="/src/debug/rendering-spike.ts"></script></body></html>

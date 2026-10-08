@@ -1,3 +1,4 @@
+import {FixedClock} from '../core/clock';
 import {layouts,pointAlong,clientToScene,contains} from '../rendering/geometry';
 import {canvasRenderer,pixiRenderer} from '../rendering/spike-adapter';
 import type {Draw,SpikeRenderer} from '../rendering/spike-adapter';
@@ -10,7 +11,8 @@ const actions=['dial','helper','water','pause','reset'];
 const media=matchMedia('(max-width:600px)'),motion=matchMedia('(prefers-reduced-motion: reduce)');
 reduce.checked=motion.matches;
 let renderer:SpikeRenderer|null=null,images:Record<string,HTMLImageElement>={},generation=0;
-let frame=0,last=0,acc=0,tick=0,userPaused=false,helper=false,pace=1;
+const clock=new FixedClock();
+let frame=0,last=0,tick=0,userPaused=false,helper=false,pace=1;
 let moisture=.2,root=.2,posture=.2,feedback=0;
 let intervals:number[]=[],renders:number[]=[],latencies:number[]=[],pendingInput:number|null=null;
 let readyAt=0,initMs=0,drawCount=0,lastReport=0;
@@ -39,7 +41,7 @@ function report(){return {renderer:rendererSelect.value,layout:isPortrait()?'por
   limits:'CPU render-call timings, not GPU completion; last 600 visible unpaused frames; model is a visual probe.'};}
 function resetMetrics(){intervals=[];renders=[];latencies=[];pendingInput=null;lastReport=0;}
 function resize(){if(!renderer)return;const l=layout();renderer.resize(l.width,l.height);
-  stage.classList.toggle('portrait',isPortrait());resetMetrics();last=0;acc=0;render();}
+  stage.classList.toggle('portrait',isPortrait());resetMetrics();last=0;clock.suspend();render();}
 function recipe():Draw[]{
   const p=isPortrait(),l=layout(),draws:Draw[]=[];
   const box=(x:number,y:number,w:number,h:number,color:number)=>draws.push({kind:'rect',x:Math.round(x),y:Math.round(y),w,h,color});
@@ -98,9 +100,8 @@ function step(){tick++;moisture=Math.max(0,moisture-.003/60);root+=(moisture-roo
   const target=root<=.25?.2:root<.4?.2+.8*(root-.25)/.15:root<=.65?1:1-.85*(root-.65)/.35;
   posture+=(target-posture)/480;feedback=Math.max(0,feedback-1/60);}
 function loop(now:number){frame=0;if(document.hidden||!renderer)return;
-  const elapsed=last?Math.min(.1,(now-last)/1000):0;
   if(last&&!userPaused&&now-readyAt>1000)sample(intervals,now-last);last=now;
-  if(!userPaused){acc+=elapsed;let n=0;while(acc>=1/60&&n<6){step();acc-=1/60;n++;}if(n===6)acc=0;}
+  if(!userPaused)clock.advance(now,()=>step());
   render();if(now-lastReport>1000){element('metrics').textContent=JSON.stringify(report(),null,2);lastReport=now;}
   if(!userPaused)frame=requestAnimationFrame(loop);
 }
@@ -111,15 +112,15 @@ function act(action:string){if(!enabled())return;pendingInput=performance.now();
   else{moisture=Math.min(1,moisture+.26);feedback=.5;say('Почва изменилась. Листья реагируют постепенно.');}
   sync();render();}
 for(const id of ['dial','helper','water'])element(id).addEventListener('click',()=>act(id));
-element('pause').addEventListener('click',()=>{userPaused=!userPaused;cancelAnimationFrame(frame);frame=0;acc=0;last=0;sync();render();startLoop();});
-element('reset').addEventListener('click',()=>{tick=0;moisture=root=posture=.2;feedback=0;helper=false;pace=1;acc=0;last=0;resetMetrics();sync();render();});
+element('pause').addEventListener('click',()=>{userPaused=!userPaused;cancelAnimationFrame(frame);frame=0;clock.suspend();last=0;sync();render();startLoop();});
+element('reset').addEventListener('click',()=>{clock.reset();tick=0;moisture=root=posture=.2;feedback=0;helper=false;pace=1;clock.suspend();last=0;resetMetrics();sync();render();});
 async function initialize(){
-  const mine=++generation;cancelAnimationFrame(frame);frame=0;renderer?.dispose();renderer=null;sync();
+  clock.suspend();const mine=++generation;cancelAnimationFrame(frame);frame=0;renderer?.dispose();renderer=null;sync();
   stage.setAttribute('aria-busy','true');say('Загружаем сцену…');resetMetrics();const before=performance.now();
   try {
     if(!Object.keys(images).length){
       const loaded=await Promise.all([['environment','environment.webp'],['characters','characters.webp'],['empty','return-poses.webp']].map(async([key,file])=>{
-        const image=new Image();image.src=`/worlds/motion/assets/${file}`;await image.decode();return [key!,image] as const;
+        const image=new Image();image.src=import.meta.env.DEV?`/worlds/motion/assets/${file}`:`/assets/worlds/cafe/${file}`;await image.decode();return [key!,image] as const;
       }));if(mine!==generation)return;images=Object.fromEntries(loaded);
     }
     const created=await (rendererSelect.value==='pixi'?pixiRenderer(images):canvasRenderer(images));
@@ -139,7 +140,7 @@ rendererSelect.addEventListener('change',()=>{void initialize();});element('retr
 layoutSelect.addEventListener('change',resize);media.addEventListener('change',resize);
 guides.addEventListener('change',()=>render());reduce.addEventListener('change',()=>{resetMetrics();render();});
 motion.addEventListener('change',()=>{reduce.checked=motion.matches;render();});
-document.addEventListener('visibilitychange',()=>{cancelAnimationFrame(frame);frame=0;last=0;acc=0;resetMetrics();sync();startLoop();});
+document.addEventListener('visibilitychange',()=>{cancelAnimationFrame(frame);frame=0;last=0;clock.suspend();resetMetrics();sync();startLoop();});
 window.addEventListener('pagehide',()=>{generation++;cancelAnimationFrame(frame);frame=0;renderer?.dispose();renderer=null;});
 window.addEventListener('pageshow',event=>{if(event.persisted)void initialize();});
 element('copy').addEventListener('click',()=>{void navigator.clipboard.writeText(JSON.stringify(report(),null,2)).then(()=>say('Измерения скопированы.'),()=>say('Не удалось скопировать. Текст измерений можно выделить вручную.'));});

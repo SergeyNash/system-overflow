@@ -1,3 +1,5 @@
+> Update 2026-10-08: this probe is now the root experience. The old motion page is retired from deployed output. Current runtime art is served from `/assets/worlds/cafe/`. See architecture.md for migration and shared-clock status. Historical statements below about preserved legacy output describe the previous iteration.
+
 # A02: representative renderer comparison
 
 Date: 2026-10-07. Status: inspectable spike and automated geometry/build checks ready; actual browser/device evidence and renderer selection remain pending.

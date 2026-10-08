@@ -1,3 +1,9 @@
+# Current update — 2026-10-08
+
+The user authorized retiring all old page content. The current café/plant rendering probe is now the root entry; retired executable files are excluded from publication and the old motion route redirects to root. Sources/tests remain for reference.
+
+A03 has started with a shared fixed clock integrated into the probe. Full contracts, command ordering and replay remain pending; see [architecture](architecture.md). The user supplied positive Canvas portrait frame/CPU timings, documented there. Pixi comparison, production assets, complete café lifecycle and visitor evidence remain pending.
+
 # Little Worlds: Work Status
 
 **A02 preparation (2026-10-07):** [renderer comparison spike](renderer-spike.md) at `/worlds/rendering/` supports Canvas/Pixi, real café art, checked aisle paths, portrait composition, target picking and a plant response inset. Strict checks/build pass. Actual browser/device evidence and D003 renderer selection remain pending; this does not complete A02. Next: review this page, then implement renderer-independent A03 clock/world/lifecycle contracts with an explicitly provisional adapter choice.
